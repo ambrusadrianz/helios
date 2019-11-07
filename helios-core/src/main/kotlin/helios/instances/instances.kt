@@ -115,7 +115,7 @@ val booleanDecoder: Decoder<Boolean> = object : Decoder<Boolean> {
 fun Boolean.Companion.decoder(): Decoder<Boolean> = booleanDecoder
 
 val stringEncoder: Encoder<String> = object : Encoder<String> {
-  override fun String.encode(): Json = JsString(this)
+  override fun String.encode(): Json = JsString(this.encode())
 }
 
 fun String.Companion.encoder(): Encoder<String> = stringEncoder
@@ -285,3 +285,40 @@ inline fun <reified E : Enum<E>> Enum.Companion.decoder(): Decoder<E> = object :
 
 }
 
+private fun String.escape(): String {
+    var c: Char = 0.toChar()
+    var i: Int
+    val len = this.length
+    val sb = StringBuilder(len + 4)
+    var t: String
+
+    i = 0
+    while (i < len) {
+        c = this[i]
+        when (c) {
+            '\\', '"' -> {
+                sb.append('\\')
+                sb.append(c)
+            }
+            '/' -> {
+                //                if (b == '<') {
+                sb.append('\\')
+                //                }
+                sb.append(c)
+            }
+            '\b' -> sb.append("\\b")
+            '\t' -> sb.append("\\t")
+            '\n' -> sb.append("\\n")
+            '\u000C' -> sb.append("\\f") // kotlin does not support '\f' https://kotlinlang.org/docs/reference/basic-types.html#characters
+            '\r' -> sb.append("\\r")
+            else -> if (c < ' ') {
+                t = "000" + Integer.toHexString(c.toInt())
+                sb.append("\\u" + t.substring(t.length - 4))
+            } else {
+                sb.append(c)
+            }
+        }
+        i += 1
+    }
+    return sb.toString()
+}
